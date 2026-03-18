@@ -1,0 +1,354 @@
+@import url('https://fonts.googleapis.com/css2?family=Allerta+Stencil&family=Orbitron:wght@400;700;900&display=swap');
+
+:root {
+  --purple:        #c84bff;
+  --purple-dim:    rgba(200, 75, 255, 0.12);
+  --purple-border: rgba(200, 75, 255, 0.32);
+  --purple-glow:   rgba(200, 75, 255, 0.45);
+  --ice:           #64b5f6;
+  --bg:            #0a0a14;
+  --tile:          #e040fb;
+  --danger:        #ff4444;
+  --text-muted:    rgba(200, 200, 255, 0.5);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: crosshair;
+  font-family: 'Allerta Stencil', cursive;
+}
+
+body {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(100, 0, 160, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(0, 60, 140, 0.1) 0%, transparent 50%),
+    #0a0a14;
+}
+
+/* ── SLIDER ── */
+#slider {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 185px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--purple), rgba(200, 75, 255, 0.2));
+  outline: none;
+  margin-top: 8px;
+  margin-left: 4px;
+  cursor: pointer;
+}
+
+#slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--purple);
+  box-shadow: 0 0 6px var(--purple), 0 0 16px rgba(200, 75, 255, 0.55);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+#slider::-webkit-slider-thumb:hover {
+  transform: scale(1.35);
+  box-shadow: 0 0 10px var(--purple), 0 0 28px rgba(200, 75, 255, 0.75);
+}
+
+#slider::-moz-range-thumb {
+  border: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--purple);
+  box-shadow: 0 0 6px var(--purple);
+  cursor: pointer;
+}
+
+/* ── ZOOM LABEL ── */
+#zom {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 3px;
+  color: rgba(200, 75, 255, 0.45);
+  text-align: center;
+  width: 185px;
+  pointer-events: none;
+}
+
+/* ── BUTTONS ── */
+#switch,
+#records {
+  display: block;
+  position: absolute;
+  width: 185px;
+  outline: none;
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  padding: 9px 12px;
+  margin-left: 2px;
+  cursor: pointer;
+  color: rgba(200, 75, 255, 0.65);
+  background: var(--purple-dim);
+  border: 1px solid var(--purple-border);
+  clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  transition: color 0.25s, background 0.25s, border-color 0.25s, box-shadow 0.25s;
+  text-transform: uppercase;
+}
+
+#switch { margin-top: 8px; }
+#records { margin-top: 8px; }
+
+#switch:hover,
+#records:hover {
+  color: #fff;
+  background: rgba(200, 75, 255, 0.22);
+  border-color: var(--purple);
+  box-shadow: 0 0 16px rgba(200, 75, 255, 0.32), inset 0 0 12px rgba(200, 75, 255, 0.07);
+}
+
+#switch:active,
+#records:active {
+  color: #fff;
+  background: rgba(200, 75, 255, 0.38);
+  transform: scale(0.97);
+}
+
+/* ── RECORDS LIST ── */
+#listR {
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  line-height: 1.9;
+  color: var(--text-muted);
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ── SCORE ── */
+#score {
+  font-family: 'Orbitron', monospace !important;
+  font-weight: 900 !important;
+  color: var(--tile) !important;
+  text-shadow: 0 0 18px var(--tile), 0 0 40px rgba(224, 64, 251, 0.35);
+  text-align: center;
+  pointer-events: none;
+  will-change: transform;
+}
+
+/* ── HI-SCORE ── */
+#best {
+  font-family: 'Orbitron', monospace !important;
+  font-weight: 700 !important;
+  color: var(--ice) !important;
+  text-shadow: 0 0 10px rgba(100, 181, 246, 0.55);
+  line-height: 1.4;
+  pointer-events: none;
+}
+
+/* ── PRESS KEY ── */
+#PressKey {
+  font-family: 'Allerta Stencil', cursive !important;
+  color: rgba(200, 75, 255, 0.8) !important;
+  text-shadow: 0 0 12px rgba(200, 75, 255, 0.35);
+  letter-spacing: 2px;
+  text-align: center;
+  pointer-events: none;
+}
+
+/* ── TIMER ── */
+#time {
+  font-family: 'Orbitron', monospace !important;
+  font-weight: 700 !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+  pointer-events: none;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+
+#time.urgent {
+  color: var(--danger) !important;
+  text-shadow: 0 0 14px rgba(255, 68, 68, 0.65), 0 0 30px rgba(255, 68, 68, 0.3) !important;
+  animation: timerPulse 0.5s ease-in-out infinite alternate;
+}
+
+/* ── PATREON ── */
+#patr {
+  color: rgba(200, 75, 255, 0.25);
+  text-decoration: none;
+  font-family: 'Orbitron', monospace;
+  font-size: 8px;
+  letter-spacing: 2px;
+  transition: color 0.3s, text-shadow 0.3s;
+}
+
+#patr:hover {
+  color: var(--purple);
+  text-shadow: 0 0 8px var(--purple);
+}
+
+/* ── GAME OVER OVERLAY ── */
+#gameOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(6, 3, 16, 0.92);
+  z-index: 50;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+#gameOverlay.visible {
+  display: flex;
+  animation: fadeIn 0.2s ease;
+}
+
+.go-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(18px, 3.5vw, 28px);
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: var(--tile);
+  text-shadow: 0 0 24px var(--tile), 0 0 50px rgba(224, 64, 251, 0.35);
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.go-title.win {
+  color: var(--ice);
+  text-shadow: 0 0 24px var(--ice), 0 0 50px rgba(100, 181, 246, 0.35);
+}
+
+.go-score {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(36px, 7vw, 60px);
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 22px rgba(224, 64, 251, 0.65);
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+  text-align: center;
+}
+
+.go-label {
+  font-family: 'Allerta Stencil', cursive;
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 4px;
+  margin-bottom: 22px;
+  text-align: center;
+}
+
+.go-hint {
+  font-family: 'Allerta Stencil', cursive;
+  font-size: 10px;
+  color: rgba(200, 75, 255, 0.4);
+  letter-spacing: 3px;
+  text-align: center;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0.9; }
+  50%       { opacity: 0.15; }
+}
+
+@keyframes scorePopup {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.45); }
+  100% { transform: scale(1); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  18%      { transform: translateX(-7px); }
+  36%      { transform: translateX(7px); }
+  54%      { transform: translateX(-4px); }
+  72%      { transform: translateX(4px); }
+}
+
+@keyframes timerPulse {
+  from { opacity: 0.75; }
+  to   { opacity: 1; }
+}
+
+.score-pop {
+  animation: scorePopup 0.22s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+
+.shake {
+  animation: shake 0.42s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
+/* ── GRID SIZE BUTTONS ── */
+#gridBtns {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  margin-left: 4px;
+  width: 185px;
+}
+
+.grid-btn {
+  flex: 1;
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 7px 2px;
+  cursor: pointer;
+  color: rgba(200, 75, 255, 0.45);
+  background: rgba(200, 75, 255, 0.06);
+  border: 1px solid rgba(200, 75, 255, 0.18);
+  clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+  transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.grid-btn:hover {
+  color: white;
+  background: rgba(200, 75, 255, 0.18);
+  border-color: rgba(200, 75, 255, 0.5);
+}
+
+.grid-btn.active {
+  color: white;
+  background: rgba(200, 75, 255, 0.28);
+  border-color: var(--purple);
+  box-shadow: 0 0 8px rgba(200, 75, 255, 0.3);
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(200, 75, 255, 0.35); border-radius: 2px; }
