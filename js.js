@@ -59,17 +59,68 @@ function playWin() {
 }
 
 // ─── CANVAS COLORS ───────────────────────────────────────────────────────────
-var TILE_COLOR      = 'white';
-var TILE_GLOW       = 'rgba(255, 255, 255, 0.85)';
-var GRID_COLOR      = 'rgba(180, 80, 255, 0.45)';
-var ERROR_COLOR     = '#ff4444';
-var CROSSHAIR_COLOR = '#00f0ff';
+var DEFAULT_THEME = {
+    bg: '#0a0a14',
+    panel: '#12101f',
+    accent: '#c84bff',
+    score: '#e040fb',
+    boardTile: '#ffffff',
+    ice: '#64b5f6',
+    danger: '#ff4444',
+    grid: '#b450ff',
+    crosshair: '#00f0ff'
+};
+
+function isValidHexColor(value) {
+    return typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
+function normalizeHex(value, fallback) {
+    return isValidHexColor(value) ? value.toLowerCase() : fallback;
+}
+
+function normalizeTheme(theme) {
+    theme = theme || {};
+    return {
+        bg: normalizeHex(theme.bg, DEFAULT_THEME.bg),
+        panel: normalizeHex(theme.panel, DEFAULT_THEME.panel),
+        accent: normalizeHex(theme.accent, DEFAULT_THEME.accent),
+        score: normalizeHex(theme.score, DEFAULT_THEME.score),
+        boardTile: normalizeHex(theme.boardTile, DEFAULT_THEME.boardTile),
+        ice: normalizeHex(theme.ice, DEFAULT_THEME.ice),
+        danger: normalizeHex(theme.danger, DEFAULT_THEME.danger),
+        grid: normalizeHex(theme.grid, DEFAULT_THEME.grid),
+        crosshair: normalizeHex(theme.crosshair, DEFAULT_THEME.crosshair)
+    };
+}
+
+function hexToRgb(hex) {
+    return {
+        r: parseInt(hex.slice(1, 3), 16),
+        g: parseInt(hex.slice(3, 5), 16),
+        b: parseInt(hex.slice(5, 7), 16)
+    };
+}
+
+function rgbaFromHex(hex, alpha) {
+    var rgb = hexToRgb(hex);
+    return 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
+}
+
+var THEME = normalizeTheme(loadData('theme'));
+var TILE_COLOR      = THEME.boardTile;
+var TILE_GLOW       = rgbaFromHex(THEME.boardTile, 0.85);
+var GRID_COLOR      = rgbaFromHex(THEME.grid, 0.45);
+var ERROR_COLOR     = THEME.danger;
+var CROSSHAIR_COLOR = THEME.crosshair;
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 var PatRec  = loadData('recordsP')    || [];
 var FreRec  = loadData('records')     || [];
 var SoloRec = loadData('recordsSolo') || [];
 var GRID_SIZE = loadData('gridSize') || 4;
+var WHITE_COUNT_DEFAULTS = { 3: 1, 4: 3, 5: 5, 6: 8 };
+var GRID_WHITE_COUNTS = loadData('gridWhiteCounts') || {};
 
 var key;
 var timerGO   = null;
@@ -96,6 +147,9 @@ var ZoomI, wOLD, cXXo, cYYo;
 var slider = document.createElement('input');
 var div    = document.createElement('div');
 var zom    = document.createElement('div');
+var themeToggle = document.createElement("BUTTON");
+var themePanel  = document.createElement("div");
+var whiteCountB = document.createElement("BUTTON");
 var sqsizeD = Math.round(window.innerHeight * 0.108);
 var sqsize;
 var button  = document.createElement("BUTTON");
@@ -108,6 +162,115 @@ var soloX = 0, soloY = 0;
 var storedZoom = loadData('zoom');
 var ZoomN      = storedZoom !== null ? parseInt(storedZoom, 10) : 100;
 var storedPatt = loadData('patt');
+
+function applyTheme(theme) {
+    var root = document.documentElement.style;
+    THEME = normalizeTheme(theme);
+    TILE_COLOR      = THEME.boardTile;
+    TILE_GLOW       = rgbaFromHex(THEME.boardTile, 0.85);
+    GRID_COLOR      = rgbaFromHex(THEME.grid, 0.45);
+    ERROR_COLOR     = THEME.danger;
+    CROSSHAIR_COLOR = THEME.crosshair;
+
+    root.setProperty('--bg', THEME.bg);
+    root.setProperty('--bg-aura-1', rgbaFromHex(THEME.accent, 0.2));
+    root.setProperty('--bg-aura-2', rgbaFromHex(THEME.ice, 0.12));
+    root.setProperty('--panel-solid', THEME.panel);
+    root.setProperty('--purple', THEME.accent);
+    root.setProperty('--purple-dim', rgbaFromHex(THEME.accent, 0.12));
+    root.setProperty('--purple-border', rgbaFromHex(THEME.accent, 0.32));
+    root.setProperty('--purple-glow', rgbaFromHex(THEME.accent, 0.45));
+    root.setProperty('--ice', THEME.ice);
+    root.setProperty('--tile', THEME.score);
+    root.setProperty('--board-tile', THEME.boardTile);
+    root.setProperty('--danger', THEME.danger);
+    root.setProperty('--text-muted', rgbaFromHex(THEME.ice, 0.5));
+    root.setProperty('--score-glow', rgbaFromHex(THEME.score, 0.35));
+    root.setProperty('--ice-glow', rgbaFromHex(THEME.ice, 0.35));
+    root.setProperty('--ice-soft', rgbaFromHex(THEME.ice, 0.55));
+    root.setProperty('--accent-soft', rgbaFromHex(THEME.accent, 0.35));
+    root.setProperty('--hint-color', rgbaFromHex(THEME.accent, 0.4));
+    root.setProperty('--patr-color', rgbaFromHex(THEME.accent, 0.25));
+    root.setProperty('--timer-soft', rgbaFromHex('#ffffff', 0.2));
+    root.setProperty('--danger-soft', rgbaFromHex(THEME.danger, 0.65));
+    root.setProperty('--danger-glow', rgbaFromHex(THEME.danger, 0.3));
+
+    if (div && div.style) {
+        div.style.backgroundColor = THEME.panel;
+        div.style.boxShadow = '0 0 40px ' + rgbaFromHex(THEME.accent, 0.12);
+    }
+    if (context && canvas && canvas.width) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        CanvasLines();
+    }
+    if (typeof CanvasBlack === 'function' &&
+        typeof contextB !== 'undefined' &&
+        contextB &&
+        canvasB &&
+        canvasB.width) {
+        CanvasBlack();
+    }
+}
+
+function saveTheme() {
+    saveData('theme', THEME);
+}
+
+function isInteractiveThemeTarget(target) {
+    if (!target || !target.classList || !target.closest) { return false; }
+    return target === themeToggle ||
+           target === themePanel ||
+           target.id === 'themeReset' ||
+           target.classList.contains('theme-color') ||
+           target.closest('#themePanel');
+}
+
+function clampWhiteCount(gridSize, count) {
+    var maxTiles = Math.max(1, gridSize * gridSize - 1);
+    var parsed = parseInt(count, 10);
+    if (isNaN(parsed)) { parsed = WHITE_COUNT_DEFAULTS[gridSize] || 1; }
+    return Math.max(1, Math.min(maxTiles, parsed));
+}
+
+function getWhiteTileCount(gridSize) {
+    var size = gridSize || GRID_SIZE;
+    var saved = GRID_WHITE_COUNTS[size];
+    var count = clampWhiteCount(size, saved);
+    GRID_WHITE_COUNTS[size] = count;
+    return count;
+}
+
+function saveWhiteCounts() {
+    saveData('gridWhiteCounts', GRID_WHITE_COUNTS);
+}
+
+function syncWhiteCountButton() {
+    if (!whiteCountB) { return; }
+    whiteCountB.innerHTML = 'WHITES ' + getWhiteTileCount();
+}
+
+function buildUniqueTileSet(count) {
+    var used = {};
+    var xs = [];
+    var ys = [];
+    while (xs.length < count) {
+        var x = rnd();
+        var y = rnd();
+        var key = x + ',' + y;
+        if (!used[key]) {
+            used[key] = true;
+            xs.push(x);
+            ys.push(y);
+        }
+    }
+    return { xs: xs, ys: ys };
+}
+
+function resetCurrentModePreview() {
+    if (Patt === 0) { Refresh(1); }
+    else if (Patt === 1) { RefrePP(1); }
+    else { RefreshSolo(1); }
+}
 
 // ─── ZOOM / GRID SETUP ───────────────────────────────────────────────────────
 function SetCzoom() {
@@ -144,6 +307,7 @@ div.style.backgroundColor = '#12101f';
 div.style.boxShadow       = '0 0 40px rgba(140, 0, 220, 0.12)';
 div.style.pointerEvents   = 'none';
 document.body.appendChild(div);
+applyTheme(THEME);
 
 // ─── ZOOM LABEL ──────────────────────────────────────────────────────────────
 zom.id              = "zom";
@@ -189,6 +353,26 @@ document.body.appendChild(gridBtns);
     gridBtns.appendChild(b);
 });
 
+whiteCountB.id = "whiteCount";
+whiteCountB.style.position = 'absolute';
+whiteCountB.style.top      = '228px';
+whiteCountB.style.left     = '20px';
+whiteCountB.style.zIndex   = '35';
+document.body.appendChild(whiteCountB);
+syncWhiteCountButton();
+whiteCountB.addEventListener('click', function() {
+    var maxTiles = Math.max(1, GRID_SIZE * GRID_SIZE - 1);
+    GRID_WHITE_COUNTS[GRID_SIZE] = getWhiteTileCount() + 1;
+    if (GRID_WHITE_COUNTS[GRID_SIZE] > maxTiles) {
+        GRID_WHITE_COUNTS[GRID_SIZE] = 1;
+    }
+    GRID_WHITE_COUNTS[GRID_SIZE] = clampWhiteCount(GRID_SIZE, GRID_WHITE_COUNTS[GRID_SIZE]);
+    saveWhiteCounts();
+    syncWhiteCountButton();
+    resetCurrentModePreview();
+    whiteCountB.blur();
+});
+
 function setGridSize(sz) {
     GRID_SIZE = sz;
     saveData('gridSize', sz);
@@ -196,9 +380,10 @@ function setGridSize(sz) {
     document.querySelectorAll('.grid-btn').forEach(function(b) {
         b.classList.toggle('active', Number(b.getAttribute('data-size')) === sz);
     });
+    syncWhiteCountButton();
     context.clearRect(0, 0, canvas.width, canvas.height);
     CanvasLines();
-    CanvasBlack();
+    resetCurrentModePreview();
 }
 
 // ─── MODE BUTTON ─────────────────────────────────────────────────────────────
@@ -245,6 +430,276 @@ Rec.style.zIndex        = 11;
 Rec.style.width         = '185px';
 Rec.style.pointerEvents = 'none';
 recordsB.appendChild(Rec);
+
+themeToggle.innerHTML      = "COLORS";
+themeToggle.id             = "themeToggle";
+themeToggle.style.top      = '20px';
+themeToggle.style.right    = '20px';
+themeToggle.style.zIndex   = '35';
+document.body.appendChild(themeToggle);
+
+themePanel.id           = "themePanel";
+themePanel.style.top    = '68px';
+themePanel.style.right  = '20px';
+themePanel.style.zIndex = '45';
+document.body.appendChild(themePanel);
+
+var THEME_FIELDS = [
+    { key: 'bg', label: 'Background' },
+    { key: 'panel', label: 'Panel' },
+    { key: 'accent', label: 'Accent' },
+    { key: 'score', label: 'Score' },
+    { key: 'boardTile', label: 'Tiles' },
+    { key: 'ice', label: 'Hi-score' },
+    { key: 'danger', label: 'Danger' },
+    { key: 'grid', label: 'Grid' },
+    { key: 'crosshair', label: 'Crosshair' }
+];
+
+var THEME_PRESETS = [
+    {
+        id: 'neon',
+        label: 'Neon',
+        theme: {
+            bg: '#0a0a14',
+            panel: '#12101f',
+            accent: '#c84bff',
+            score: '#e040fb',
+            boardTile: '#ffffff',
+            ice: '#64b5f6',
+            danger: '#ff4444',
+            grid: '#b450ff',
+            crosshair: '#00f0ff'
+        }
+    },
+    {
+        id: 'sunset',
+        label: 'Sunset',
+        theme: {
+            bg: '#161018',
+            panel: '#261826',
+            accent: '#ff7a59',
+            score: '#ffb347',
+            boardTile: '#fff3e8',
+            ice: '#ffd166',
+            danger: '#ff4d6d',
+            grid: '#ff8c42',
+            crosshair: '#ffe29a'
+        }
+    },
+    {
+        id: 'royal',
+        label: 'Royal',
+        theme: {
+            bg: '#0d1020',
+            panel: '#181d37',
+            accent: '#7c5cff',
+            score: '#b08cff',
+            boardTile: '#f6f2ff',
+            ice: '#70b8ff',
+            danger: '#ff5d73',
+            grid: '#8f6bff',
+            crosshair: '#d0c2ff'
+        }
+    },
+    {
+        id: 'lava',
+        label: 'Lava',
+        theme: {
+            bg: '#160b08',
+            panel: '#261310',
+            accent: '#ff7b00',
+            score: '#ffb000',
+            boardTile: '#fff4d6',
+            ice: '#ffd166',
+            danger: '#ff3b30',
+            grid: '#ff6a00',
+            crosshair: '#ffe066'
+        }
+    },
+    {
+        id: 'ice',
+        label: 'Ice',
+        theme: {
+            bg: '#07131d',
+            panel: '#0f2433',
+            accent: '#62d0ff',
+            score: '#8af5ff',
+            boardTile: '#f4feff',
+            ice: '#79a8ff',
+            danger: '#ff5f7a',
+            grid: '#4fc3f7',
+            crosshair: '#b8ffff'
+        }
+    },
+    {
+        id: 'mint',
+        label: 'Mint',
+        theme: {
+            bg: '#091411',
+            panel: '#11211d',
+            accent: '#4dd4ac',
+            score: '#8ef6cf',
+            boardTile: '#f3fff9',
+            ice: '#89e3ff',
+            danger: '#ff6b6b',
+            grid: '#42c99a',
+            crosshair: '#d7fff0'
+        }
+    },
+    {
+        id: 'rose',
+        label: 'Rose',
+        theme: {
+            bg: '#170d14',
+            panel: '#271421',
+            accent: '#ff6fae',
+            score: '#ff9cc6',
+            boardTile: '#fff4fa',
+            ice: '#ffd0e2',
+            danger: '#ff4f6d',
+            grid: '#ff77b4',
+            crosshair: '#ffe2f0'
+        }
+    },
+    {
+        id: 'matrix',
+        label: 'Matrix',
+        theme: {
+            bg: '#040b05',
+            panel: '#0c1610',
+            accent: '#33ff88',
+            score: '#72ffb4',
+            boardTile: '#ecfff5',
+            ice: '#9fffcf',
+            danger: '#ff4d6d',
+            grid: '#1ed760',
+            crosshair: '#d4ffe5'
+        }
+    },
+    {
+        id: 'amber',
+        label: 'Amber',
+        theme: {
+            bg: '#171105',
+            panel: '#281d0b',
+            accent: '#ffbf3f',
+            score: '#ffd86b',
+            boardTile: '#fff8e6',
+            ice: '#ffe39a',
+            danger: '#ff6f3c',
+            grid: '#f7b733',
+            crosshair: '#fff0ba'
+        }
+    },
+    {
+        id: 'ocean',
+        label: 'Ocean',
+        theme: {
+            bg: '#08131b',
+            panel: '#102432',
+            accent: '#2ec4ff',
+            score: '#78e3ff',
+            boardTile: '#f1fbff',
+            ice: '#8db8ff',
+            danger: '#ff6474',
+            grid: '#3ba7d8',
+            crosshair: '#c6f3ff'
+        }
+    },
+    {
+        id: 'violet',
+        label: 'Violet',
+        theme: {
+            bg: '#120d1d',
+            panel: '#201532',
+            accent: '#a66cff',
+            score: '#cf9cff',
+            boardTile: '#faf5ff',
+            ice: '#c1b5ff',
+            danger: '#ff5c8a',
+            grid: '#9b6dff',
+            crosshair: '#eadbff'
+        }
+    },
+    {
+        id: 'carbon',
+        label: 'Carbon',
+        theme: {
+            bg: '#0d0f12',
+            panel: '#1a1f24',
+            accent: '#8aa1b1',
+            score: '#d4e4ef',
+            boardTile: '#ffffff',
+            ice: '#a9c4d5',
+            danger: '#ff5a5f',
+            grid: '#6f8798',
+            crosshair: '#f0fbff'
+        }
+    }
+];
+
+function syncThemeInputs() {
+    themePanel.querySelectorAll('.theme-color').forEach(function(input) {
+        var themeKey = input.getAttribute('data-theme-key');
+        input.value = THEME[themeKey];
+    });
+}
+
+function setThemeAndPersist(theme) {
+    THEME = normalizeTheme(theme);
+    syncThemeInputs();
+    applyTheme(THEME);
+    saveTheme();
+}
+
+var themeMarkup = '<div class="theme-head">' +
+    '<div class="theme-title">Theme Lab</div>' +
+    '<button id="themeReset" type="button">RESET</button>' +
+    '</div><div class="preset-wrap">';
+
+for (var tp = 0; tp < THEME_PRESETS.length; tp++) {
+    themeMarkup += '<button class="theme-preset" type="button" data-preset="' + THEME_PRESETS[tp].id + '">' + THEME_PRESETS[tp].label + '</button>';
+}
+
+themeMarkup += '</div><div class="theme-grid">';
+
+for (var tf = 0; tf < THEME_FIELDS.length; tf++) {
+    themeMarkup += '<div class="theme-row">' +
+        '<label for="theme_' + THEME_FIELDS[tf].key + '">' + THEME_FIELDS[tf].label + '</label>' +
+        '<input class="theme-color" id="theme_' + THEME_FIELDS[tf].key + '" data-theme-key="' + THEME_FIELDS[tf].key + '" type="color" value="' + THEME[THEME_FIELDS[tf].key] + '">' +
+        '</div>';
+}
+themeMarkup += '</div>';
+themePanel.innerHTML = themeMarkup;
+
+themeToggle.addEventListener('click', function() {
+    themePanel.classList.toggle('visible');
+    themeToggle.blur();
+});
+
+themePanel.querySelectorAll('.theme-color').forEach(function(input) {
+    input.addEventListener('input', function() {
+        THEME[input.getAttribute('data-theme-key')] = input.value.toLowerCase();
+        applyTheme(THEME);
+        saveTheme();
+    });
+});
+
+themePanel.querySelectorAll('.theme-preset').forEach(function(buttonEl) {
+    buttonEl.addEventListener('click', function() {
+        for (var i = 0; i < THEME_PRESETS.length; i++) {
+            if (THEME_PRESETS[i].id === buttonEl.getAttribute('data-preset')) {
+                setThemeAndPersist(THEME_PRESETS[i].theme);
+                break;
+            }
+        }
+    });
+});
+
+document.getElementById('themeReset').addEventListener('click', function() {
+    setThemeAndPersist(DEFAULT_THEME);
+});
 
 // ─── RECORD LIST RENDERERS ───────────────────────────────────────────────────
 function FreList() {
@@ -391,7 +846,7 @@ function calculatePat() {
             FreP();
             showGameOver(Math.round(exactPat) / 1000 + 's', 'ALL PATTERNS', true);
         } else {
-            Pround = 4; drawPAT();
+            drawPAT();
             PressKey.innerHTML = PatAm;
         }
     }
@@ -426,7 +881,6 @@ function RefrePP(p) {
     timerWenP = false;
     TimeP = 0;
     PatAm = 15;
-    Pround = 4;
     drawPAT();
     PressKey.innerHTML = "Tap pattern to start";
 }
@@ -446,13 +900,10 @@ function TimerPAT() {
 }
 
 function drawPAT() {
-    hopX[0] = rnd(); hopY[0] = rnd();
-    hopX[1] = hopX[0]; hopY[1] = hopY[0];
-    while (hopX[1] === hopX[0] && hopY[1] === hopY[0]) { hopX[1] = rnd(); hopY[1] = rnd(); }
-    hopX[2] = hopX[0]; hopY[2] = hopY[0];
-    while ((hopX[2] === hopX[0] && hopY[2] === hopY[0]) || (hopX[2] === hopX[1] && hopY[2] === hopY[1])) { hopX[2] = rnd(); hopY[2] = rnd(); }
-    hopX[3] = rnd(); hopY[3] = rnd();
-    while ((hopX[3] === hopX[0] && hopY[3] === hopY[0]) || (hopX[3] === hopX[1] && hopY[3] === hopY[1]) || (hopX[3] === hopX[2] && hopY[3] === hopY[2])) { hopX[3] = rnd(); hopY[3] = rnd(); }
+    var patternTiles = buildUniqueTileSet(getWhiteTileCount());
+    hopX = patternTiles.xs;
+    hopY = patternTiles.ys;
+    Pround = hopX.length;
     DrawBlackPat();
 }
 
@@ -665,11 +1116,9 @@ function Refresh(p) {
     clearInterval(timerGO);
     timerWent = false;
     TimeL = 30;
-    horiAr[0] = rnd(); vertAr[0] = rnd();
-    horiAr[1] = horiAr[0]; vertAr[1] = vertAr[0];
-    while (horiAr[1] === horiAr[0] && vertAr[1] === vertAr[0]) { horiAr[1] = rnd(); vertAr[1] = rnd(); }
-    horiAr[2] = horiAr[0]; vertAr[2] = vertAr[0];
-    while ((horiAr[2] === horiAr[0] && vertAr[2] === vertAr[0]) || (horiAr[2] === horiAr[1] && vertAr[2] === vertAr[1])) { horiAr[2] = rnd(); vertAr[2] = rnd(); }
+    var frenzyTiles = buildUniqueTileSet(getWhiteTileCount());
+    horiAr = frenzyTiles.xs;
+    vertAr = frenzyTiles.ys;
     DrawBlack();
     PressKey.innerHTML = "Tap white to start";
 }
@@ -680,9 +1129,9 @@ function DrawBlack() {
     contextB.shadowColor = TILE_GLOW;
     contextB.fillStyle   = TILE_COLOR;
     contextB.beginPath();
-    contextB.rect(horiAr[0] * sqsize, vertAr[0] * sqsize, sqsize, sqsize);
-    contextB.rect(horiAr[1] * sqsize, vertAr[1] * sqsize, sqsize, sqsize);
-    contextB.rect(horiAr[2] * sqsize, vertAr[2] * sqsize, sqsize, sqsize);
+    for (var i = 0; i < horiAr.length; i++) {
+        contextB.rect(horiAr[i] * sqsize, vertAr[i] * sqsize, sqsize, sqsize);
+    }
     contextB.fill();
     contextB.closePath();
     contextB.shadowBlur = 0;
@@ -694,17 +1143,16 @@ function DrawSquares() {
     var hitTile = false;
     for (var i = 0; i < horiAr.length; i++) {
         if (horiAr[i] === CoX && vertAr[i] === CoY) {
-            for (var y = 0; y < horiAr.length; y++) {
-                if (i !== y) { OtherTiles[n] = y; n++; }
-            }
-            n = 0;
             horT = horiAr[i]; verT = vertAr[i];
-            horiAr[i] = rnd(); vertAr[i] = rnd();
-            while ((horiAr[i] === horiAr[OtherTiles[0]] && vertAr[i] === vertAr[OtherTiles[0]]) ||
-                   (horiAr[i] === horiAr[OtherTiles[1]] && vertAr[i] === vertAr[OtherTiles[1]]) ||
-                   (horiAr[i] === horT && vertAr[i] === verT)) {
-                horiAr[i] = rnd(); vertAr[i] = rnd();
-            }
+            do {
+                horiAr[i] = rnd();
+                vertAr[i] = rnd();
+            } while (function() {
+                for (var y = 0; y < horiAr.length; y++) {
+                    if (i !== y && horiAr[i] === horiAr[y] && vertAr[i] === vertAr[y]) { return true; }
+                }
+                return horiAr[i] === horT && vertAr[i] === verT;
+            }());
             DrawBlack();
             if (Bonus < 92) { Bonus += 8; } else { Bonus = 100; }
             playClick();
@@ -912,7 +1360,15 @@ canvas.addEventListener('touchstart', function(e) {
 }, { passive: false });
 
 document.addEventListener('touchstart', function(e) {
-    if (e.target !== canvas) { startCurrentMode('touch'); }
+    if (e.target !== canvas &&
+        e.target !== button &&
+        e.target !== recordsB &&
+        e.target !== whiteCountB &&
+        e.target !== slider &&
+        !(e.target.classList && e.target.classList.contains('grid-btn')) &&
+        !isInteractiveThemeTarget(e.target)) {
+        startCurrentMode('touch');
+    }
 }, { passive: true });
 
 // ─── MOUSE CLICK START ───────────────────────────────────────────────────────
@@ -920,8 +1376,10 @@ document.addEventListener('touchstart', function(e) {
 document.addEventListener("mousedown", function(e) {
     if (e.target === button ||
         e.target === recordsB ||
+        e.target === whiteCountB ||
         e.target === slider ||
-        e.target.classList.contains('grid-btn')) return;
+        e.target.classList.contains('grid-btn') ||
+        isInteractiveThemeTarget(e.target)) return;
     startCurrentMode('mouse');
 });
 
